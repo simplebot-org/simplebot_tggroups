@@ -37,7 +37,7 @@ class TelegramBot(TelegramClient):  # noqa
         self.add_event_handler(
             self.id_cmd, events.NewMessage(pattern="/id", incoming=True)
         )
-        self.add_event_handler(self.tg2dc, events.NewMessage, incoming=True)
+        self.add_event_handler(self.tg2dc, events.NewMessage(incoming=True))
 
     async def start_cmd(self, event: events.NewMessage) -> None:
         await event.reply(
