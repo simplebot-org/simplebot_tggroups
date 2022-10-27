@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- improve debugging
+
 ### Fixed
 
 - ignore messages from self

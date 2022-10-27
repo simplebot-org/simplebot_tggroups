@@ -1,6 +1,7 @@
 """hooks, filters and commands definitions."""
 
 import asyncio
+import logging
 import os
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Thread
@@ -14,6 +15,10 @@ from telethon import TelegramClient, events
 from .orm import Link, init, session_scope
 from .subcommands import telegram
 from .util import AsyncQueue, get_session_path, getdefault, sync
+
+logging.basicConfig(
+    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
+)
 
 msgs_queue: AsyncQueue = AsyncQueue()
 
@@ -48,6 +53,7 @@ class TelegramBot(TelegramClient):  # noqa
         while True:
             try:
                 tgchat, msg = await msgs_queue.aget()
+                self.dcbot.logger.debug(f"Sending message (id={msg.id}) to Telegram")
                 if msg.filename:
                     filename = msg.filename
                 elif msg.html:
@@ -56,7 +62,7 @@ class TelegramBot(TelegramClient):  # noqa
                     filename = None
                 else:
                     self.dcbot.logger.debug(
-                        f"ignoring unsupported message (id={msg.id})"
+                        f"Ignoring unsupported message (id={msg.id})"
                     )
                     return
                 name = msg.override_sender_name or msg.get_sender_contact().display_name
@@ -73,6 +79,7 @@ class TelegramBot(TelegramClient):  # noqa
                 self.dcbot.logger.exception(ex)
 
     async def tg2dc(self, event: events.NewMessage) -> None:
+        self.dcbot.logger.debug(f"Got message (id={event.message.id}) from Telegram")
         msg = event.message
         if msg.text is None:
             return
@@ -144,15 +151,17 @@ def deltabot_member_removed(bot: DeltaBot, chat: Chat, contact: Contact) -> None
 
     with session_scope() as session:
         for link in session.query(Link).filter_by(dcchat=chat.id):
+            bot.logger.debug(f"Removing bridge with Telegram chat (id={link.tgchat})")
             session.delete(link)
 
 
-def filter_messages(message: Message) -> None:
+def filter_messages(bot: DeltaBot, message: Message) -> None:
     if not message.chat.is_multiuser():
         return
 
     with session_scope() as session:
         for link in session.query(Link).filter_by(dcchat=message.chat.id):
+            bot.logger.debug(f"Queuing message (id={message.id}) to Telegram")
             msgs_queue.put((link.tgchat, message))
 
 
@@ -205,5 +214,6 @@ async def listen_to_telegram(bot: DeltaBot) -> None:
         return
 
     tgbot = await TelegramBot(bot).start(bot_token=getdefault(bot, "token"))
+    bot.logger.logging("Connected to Telegram")
     asyncio.create_task(tgbot.dc2tg())
     await tgbot.run_until_disconnected()
