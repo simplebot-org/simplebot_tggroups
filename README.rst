@@ -21,6 +21,8 @@ Telegram Groups Bridge
 
 A `SimpleBot`_ plugin that allows to bridge Telegram and Delta Chat groups.
 
+    For channel subscriptions use: https://github.com/simplebot-org/simplebot_tgchan
+
 Installation
 ------------
 
