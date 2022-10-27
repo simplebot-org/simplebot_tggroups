@@ -26,9 +26,13 @@ class TelegramBot(TelegramClient):  # noqa
             api_hash=getdefault(dcbot, "api_hash"),
         )
         self.dcbot = dcbot
-        self.add_event_handler(self.start_cmd, events.NewMessage(pattern="/start"))
-        self.add_event_handler(self.id_cmd, events.NewMessage(pattern="/id"))
-        self.add_event_handler(self.tg2dc, events.NewMessage)
+        self.add_event_handler(
+            self.start_cmd, events.NewMessage(pattern="/start", incoming=True)
+        )
+        self.add_event_handler(
+            self.id_cmd, events.NewMessage(pattern="/id", incoming=True)
+        )
+        self.add_event_handler(self.tg2dc, events.NewMessage, incoming=True)
 
     async def start_cmd(self, event: events.NewMessage) -> None:
         await event.reply(
