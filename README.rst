@@ -49,6 +49,7 @@ Then you can start bridging Telegram and Delta Chat groups, send ``/help`` to th
 more info.
 
 To bridge a Telegram group to a Delta Chat group:
+
 1. Add the bot in Telegram to your group.
 2. Send ``/id`` command in the Telegram group, copy the ID returned by the bot.
 3. Add the bot in Delta Chat to your group.
