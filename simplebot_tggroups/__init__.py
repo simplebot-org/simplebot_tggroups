@@ -52,31 +52,33 @@ class TelegramBot(TelegramClient):  # noqa
     async def dc2tg(self) -> None:
         while True:
             try:
+                files = []
                 tgchat, msg = await msgs_queue.aget()
                 self.dcbot.logger.debug(f"Sending message (id={msg.id}) to Telegram")
                 if msg.filename:
-                    filename = msg.filename
-                elif msg.html:
-                    filename = msg.html.encode(errors="replace")
-                elif msg.text:
-                    filename = None
-                else:
+                    files.append(msg.filename)
+                if msg.html:
+                    tmpfile = NamedTemporaryFile(suffix=".html")  # noqa
+                    tmpfile.write(msg.html.encode(errors="replace"))
+                    tmpfile.seek(0)
+                    files.append(tmpfile)
+                if not msg.text and not files:
                     self.dcbot.logger.debug(
                         f"Ignoring unsupported message (id={msg.id})"
                     )
                     return
                 name = msg.override_sender_name or msg.get_sender_contact().display_name
                 text = f"**{name}:** {msg.text}"
-                if filename:
-                    if isinstance(filename, bytes):
-                        with NamedTemporaryFile(suffix=".html") as tmpfile:
-                            tmpfile.write(filename)
-                            tmpfile.seek(0)
-                            await self.send_message(tgchat, text, file=tmpfile)
-                            return
-                await self.send_message(tgchat, text, file=filename)
+                await self.send_message(tgchat, text, file=files)
             except Exception as ex:
                 self.dcbot.logger.exception(ex)
+            finally:
+                for file_ in files:
+                    if not isinstance(file_, str):
+                        try:
+                            file_.close()
+                        except Exception as ex:
+                            self.dcbot.logger.exception(ex)
 
     async def tg2dc(self, event: events.NewMessage) -> None:
         self.dcbot.logger.debug(f"Got message (id={event.message.id}) from Telegram")

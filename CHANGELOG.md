@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- support sending attachments + HTML message from Delta Chat to Telegram
+
 ### Changed
 
 - improve debugging
