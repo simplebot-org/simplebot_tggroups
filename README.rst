@@ -36,7 +36,7 @@ Configuration
 See https://github.com/simplebot-org/simplebot to know how to configure the bot with an e-mail account.
 
 Before you start using the bot, you need to get your own API ID and hash, go to https://my.telegram.org,
-you also need a bot token, got to [@BotFather](https://t.me/botfather) on Telegram and create a bot,
+you also need a bot token, got to `@BotFather <https://t.me/botfather>`_ on Telegram and create a bot,
 then to set API ID, API hash and bot token, execute::
 
     simplebot -a bot@example.com telegram
