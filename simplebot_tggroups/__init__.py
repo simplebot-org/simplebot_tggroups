@@ -69,7 +69,6 @@ class TelegramBot(TelegramClient):  # noqa
                 self.dcbot.logger.exception(ex)
 
     async def tg2dc(self, event: events.NewMessage) -> None:
-        self.dcbot.logger.debug(event)
         msg = event.message
         if msg.text is None:
             return
