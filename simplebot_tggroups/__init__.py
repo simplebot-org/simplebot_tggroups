@@ -83,7 +83,11 @@ class TelegramBot(TelegramClient):  # noqa
         raise events.StopPropagation
 
     async def id_cmd(self, event: events.NewMessage) -> None:
-        await event.reply(str(event.chat_id))
+        if event.is_private:
+            text = "❌ You must send that command in a Telegram group, not here"
+        else:
+            text = str(event.chat_id)
+        await event.reply(text)
         raise events.StopPropagation
 
     async def dc2tg(self) -> None:

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- don't send ID in private chats on Telegram
+
 ## [v0.2.0]
 
 ### Added
@@ -23,4 +29,5 @@
 - initial release
 
 
+[Unreleased]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.2.0...HEAD
 [v0.2.0]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.1.0...v0.2.0
