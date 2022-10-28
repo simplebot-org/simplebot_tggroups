@@ -87,6 +87,8 @@ class TelegramBot(TelegramClient):  # noqa
                 tgmsg = await self.send_message(
                     tgchat, text, file=files or None, reply_to=reply_to
                 )
+                if isinstance(tgmsg, list):
+                    tgmsg = tgmsg[0]
                 self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
                 self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
             except (ChannelPrivateError, ChatIdInvalidError, ValueError) as ex:
