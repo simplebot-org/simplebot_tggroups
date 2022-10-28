@@ -12,7 +12,7 @@ from deltachat import Chat, Contact, Message
 from simplebot import DeltaBot
 from simplebot.bot import Replies
 from telethon import TelegramClient, events
-from telethon.errors.rpcerrorlist import ChannelPrivateError
+from telethon.errors.rpcerrorlist import ChannelPrivateError, ChatIdInvalidError
 
 from .orm import Link, init, session_scope
 from .subcommands import telegram
@@ -89,7 +89,7 @@ class TelegramBot(TelegramClient):  # noqa
                 )
                 self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
                 self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
-            except ChannelPrivateError as ex:
+            except (ChannelPrivateError, ChatIdInvalidError, ValueError) as ex:
                 self.dcbot.logger.exception(ex)
                 try:
                     unbridged_chats = []
