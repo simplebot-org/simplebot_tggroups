@@ -17,7 +17,7 @@ from telethon.errors.rpcerrorlist import ChannelPrivateError, ChatIdInvalidError
 
 from .orm import Link, init, session_scope
 from .subcommands import telegram
-from .util import AsyncQueue, get_session_path, getdefault, sync
+from .util import AsyncQueue, get_session_path, getdefault, shorten_text, sync
 
 logging.basicConfig(
     format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s", level=logging.WARNING
@@ -84,7 +84,7 @@ class TelegramBot(TelegramClient):  # noqa
                     dcmsg.override_sender_name
                     or dcmsg.get_sender_contact().display_name
                 )
-                text = f"**{name}:** {dcmsg.text}"
+                text = f"**{shorten_text(name, 30)}:** {dcmsg.text}"
                 tgmsg = await self.send_message(
                     tgchat, text, file=file_ or None, reply_to=reply_to
                 )

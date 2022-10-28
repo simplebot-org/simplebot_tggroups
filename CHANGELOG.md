@@ -9,6 +9,7 @@
 ### Changed
 
 - improve debugging
+- truncate too long nicknames when relaying messages to telegram
 
 ### Fixed
 
