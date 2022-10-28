@@ -13,7 +13,7 @@ from deltachat import Chat, Contact, Message
 from pydub import AudioSegment
 from simplebot import DeltaBot
 from simplebot.bot import Replies
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, functions, types
 from telethon.errors.rpcerrorlist import ChannelPrivateError, ChatIdInvalidError
 
 from .orm import Link, init, session_scope
@@ -35,6 +35,7 @@ class TelegramBot(TelegramClient):  # noqa
             api_hash=getdefault(dcbot, "api_hash"),
         )
         self.dcbot = dcbot
+
         plugin_dir = os.path.join(os.path.dirname(self.dcbot.account.db_path), __name__)
         if not os.path.exists(plugin_dir):
             os.makedirs(plugin_dir)
@@ -42,6 +43,7 @@ class TelegramBot(TelegramClient):  # noqa
         self.cache = FileSystemCache(
             cache_dir, threshold=0, default_timeout=60 * 60 * 24 * 60
         )
+
         self.add_event_handler(
             self.start_cmd, events.NewMessage(pattern="/start", incoming=True)
         )
@@ -49,6 +51,19 @@ class TelegramBot(TelegramClient):  # noqa
             self.id_cmd, events.NewMessage(pattern="/id", incoming=True)
         )
         self.add_event_handler(self.tg2dc, events.NewMessage(incoming=True))
+
+    async def set_commands(self) -> None:
+        await self(
+            functions.bots.SetBotCommandsRequest(
+                scope=types.BotCommandScopeDefault(),
+                lang_code="en",
+                commands=[
+                    types.BotCommand(
+                        command="/id", description="gets the ID of the current chat"
+                    )
+                ],
+            )
+        )
 
     def _acc2mp3(self, filename: str) -> Any:
         try:
@@ -291,5 +306,7 @@ async def listen_to_telegram(dcbot: DeltaBot) -> None:
 
     tgbot = await TelegramBot(dcbot).start(bot_token=getdefault(dcbot, "token"))
     dcbot.logger.debug("Connected to Telegram")
+    await tgbot.set_commands()
+    dcbot.logger.debug("Registered commands on Telegram")
     asyncio.create_task(tgbot.dc2tg())
     await tgbot.run_until_disconnected()

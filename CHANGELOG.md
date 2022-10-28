@@ -5,6 +5,7 @@
 ### Added
 
 - added support for message replies/quotes
+- register bot's supported commands in Telegram for better usability
 
 ### Changed
 
