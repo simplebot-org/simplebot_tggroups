@@ -124,7 +124,7 @@ class TelegramBot(TelegramClient):  # noqa
 
     async def tg2dc(self, event: events.NewMessage) -> None:
         self.dcbot.logger.debug(
-            f"Got message (id={event.message.id}) from Telegram chat (id=event.chat_id)"
+            f"Got message (id={event.message.id}) from Telegram chat (id={event.chat_id})"
         )
         tgmsg = event.message
         if tgmsg.text is None:
@@ -136,7 +136,7 @@ class TelegramBot(TelegramClient):  # noqa
             ]
         if not dcchats:
             self.dcbot.logger.debug(
-                f"Ignoring message from Telegram chat (id=event.chat_id)"
+                f"Ignoring message from Telegram chat (id={event.chat_id})"
             )
             return
 
