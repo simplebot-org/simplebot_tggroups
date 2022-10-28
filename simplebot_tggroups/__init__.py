@@ -259,18 +259,18 @@ def unbridge(message: Message, replies: Replies) -> None:
 
 
 @sync
-async def listen_to_telegram(bot: DeltaBot) -> None:
+async def listen_to_telegram(dcbot: DeltaBot) -> None:
     if not all(
         (
-            getdefault(bot, "api_id"),
-            getdefault(bot, "api_hash"),
-            getdefault(bot, "token"),
+            getdefault(dcbot, "api_id"),
+            getdefault(dcbot, "api_hash"),
+            getdefault(dcbot, "token"),
         )
     ):
-        bot.logger.warning("Telegram session not configured")
+        dcbot.logger.warning("Telegram session not configured")
         return
 
-    tgbot = await TelegramBot(bot).start(bot_token=getdefault(bot, "token"))
-    bot.logger.logging("Connected to Telegram")
+    tgbot = await TelegramBot(dcbot).start(bot_token=getdefault(dcbot, "token"))
+    dcbot.logger.debug("Connected to Telegram")
     asyncio.create_task(tgbot.dc2tg())
     await tgbot.run_until_disconnected()
