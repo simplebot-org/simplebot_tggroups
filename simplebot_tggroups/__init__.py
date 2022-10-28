@@ -5,6 +5,7 @@ import logging
 import os
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Thread
+from typing import Any
 
 import simplebot
 from cachelib import FileSystemCache
@@ -61,17 +62,17 @@ class TelegramBot(TelegramClient):  # noqa
     async def dc2tg(self) -> None:
         while True:
             try:
-                files = []
+                file_: Any = ""
                 tgchat, dcmsg = await msgs_queue.aget()
                 self.dcbot.logger.debug(f"Sending message (id={dcmsg.id}) to Telegram")
                 if dcmsg.filename:
-                    files.append(dcmsg.filename)
-                if dcmsg.html:
+                    file_ = dcmsg.filename
+                elif dcmsg.html:
                     tmpfile = NamedTemporaryFile(suffix=".html")  # noqa
                     tmpfile.write(dcmsg.html.encode(errors="replace"))
                     tmpfile.seek(0)
-                    files.append(tmpfile)
-                if not dcmsg.text and not files:
+                    file_ = tmpfile
+                if not dcmsg.text and not file_:
                     self.dcbot.logger.debug(
                         f"Ignoring unsupported message (id={dcmsg.id})"
                     )
@@ -85,10 +86,8 @@ class TelegramBot(TelegramClient):  # noqa
                 )
                 text = f"**{name}:** {dcmsg.text}"
                 tgmsg = await self.send_message(
-                    tgchat, text, file=files or None, reply_to=reply_to
+                    tgchat, text, file=file_ or None, reply_to=reply_to
                 )
-                if isinstance(tgmsg, list):
-                    tgmsg = tgmsg[0]
                 self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
                 self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
             except (ChannelPrivateError, ChatIdInvalidError, ValueError) as ex:
@@ -117,12 +116,11 @@ class TelegramBot(TelegramClient):  # noqa
             except Exception as ex:
                 self.dcbot.logger.exception(ex)
             finally:
-                for file_ in files:
-                    if not isinstance(file_, str):
-                        try:
-                            file_.close()
-                        except Exception as ex:
-                            self.dcbot.logger.exception(ex)
+                if not isinstance(file_, str):
+                    try:
+                        file_.close()
+                    except Exception as ex:
+                        self.dcbot.logger.exception(ex)
 
     async def tg2dc(self, event: events.NewMessage) -> None:
         self.dcbot.logger.debug(
