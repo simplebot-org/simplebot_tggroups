@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Thread
 
 import simplebot
+from cachelib import FileSystemCache
 from deltachat import Chat, Contact, Message
 from simplebot import DeltaBot
 from simplebot.bot import Replies
@@ -31,6 +32,13 @@ class TelegramBot(TelegramClient):  # noqa
             api_hash=getdefault(dcbot, "api_hash"),
         )
         self.dcbot = dcbot
+        plugin_dir = os.path.join(os.path.dirname(self.dcbot.account.db_path), __name__)
+        if not os.path.exists(plugin_dir):
+            os.makedirs(plugin_dir)
+        cache_dir = os.path.join(plugin_dir, "cache")
+        self.cache = FileSystemCache(
+            cache_dir, threshold=0, default_timeout=60 * 60 * 24 * 60
+        )
         self.add_event_handler(
             self.start_cmd, events.NewMessage(pattern="/start", incoming=True)
         )
@@ -53,23 +61,33 @@ class TelegramBot(TelegramClient):  # noqa
         while True:
             try:
                 files = []
-                tgchat, msg = await msgs_queue.aget()
-                self.dcbot.logger.debug(f"Sending message (id={msg.id}) to Telegram")
-                if msg.filename:
-                    files.append(msg.filename)
-                if msg.html:
+                tgchat, dcmsg = await msgs_queue.aget()
+                self.dcbot.logger.debug(f"Sending message (id={dcmsg.id}) to Telegram")
+                if dcmsg.filename:
+                    files.append(dcmsg.filename)
+                if dcmsg.html:
                     tmpfile = NamedTemporaryFile(suffix=".html")  # noqa
-                    tmpfile.write(msg.html.encode(errors="replace"))
+                    tmpfile.write(dcmsg.html.encode(errors="replace"))
                     tmpfile.seek(0)
                     files.append(tmpfile)
-                if not msg.text and not files:
+                if not dcmsg.text and not files:
                     self.dcbot.logger.debug(
-                        f"Ignoring unsupported message (id={msg.id})"
+                        f"Ignoring unsupported message (id={dcmsg.id})"
                     )
                     return
-                name = msg.override_sender_name or msg.get_sender_contact().display_name
-                text = f"**{name}:** {msg.text}"
-                await self.send_message(tgchat, text, file=files)
+                reply_to = None
+                if dcmsg.quote:
+                    reply_to = self.cache.get(f"d{tgchat}/{dcmsg.quote.id}")
+                name = (
+                    dcmsg.override_sender_name
+                    or dcmsg.get_sender_contact().display_name
+                )
+                text = f"**{name}:** {dcmsg.text}"
+                tgmsg = await self.send_message(
+                    tgchat, text, file=files, reply_to=reply_to
+                )
+                self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
+                self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
             except Exception as ex:
                 self.dcbot.logger.exception(ex)
             finally:
@@ -82,8 +100,8 @@ class TelegramBot(TelegramClient):  # noqa
 
     async def tg2dc(self, event: events.NewMessage) -> None:
         self.dcbot.logger.debug(f"Got message (id={event.message.id}) from Telegram")
-        msg = event.message
-        if msg.text is None:
+        tgmsg = event.message
+        if tgmsg.text is None:
             return
         with session_scope() as session:
             dcchats = [
@@ -95,22 +113,35 @@ class TelegramBot(TelegramClient):  # noqa
 
         replies = Replies(self.dcbot, self.dcbot.logger)
         args = dict(
-            text=msg.text,
+            text=tgmsg.text,
             sender=" ".join(
-                (msg.sender.first_name or "", msg.sender.last_name or "")
+                (tgmsg.sender.first_name or "", tgmsg.sender.last_name or "")
             ).strip(),
         )
         with TemporaryDirectory() as tempdir:
-            if msg.file and msg.file.size <= int(getdefault(self.dcbot, "max_size")):
-                args["filename"] = await msg.download_media(tempdir)
-                if args["filename"] and msg.sticker:
+            if tgmsg.file and tgmsg.file.size <= int(
+                getdefault(self.dcbot, "max_size")
+            ):
+                args["filename"] = await tgmsg.download_media(tempdir)
+                if args["filename"] and tgmsg.sticker:
                     args["viewtype"] = "sticker"
             if not args.get("text") and not args.get("filename"):
                 return
+            if tgmsg.reply_to and tgmsg.reply_to.reply_to_msg_id:
+                quote_id = self.cache.get(
+                    f"t{event.chat_id}/{tgmsg.reply_to.reply_to_msg_id}"
+                )
+                if quote_id:
+                    try:
+                        args["quote"] = self.dcbot.account.get_message_by_id(quote_id)
+                    except Exception as ex:
+                        self.dcbot.logger.exception(ex)
             for chat_id in dcchats:
                 try:
                     replies.add(**args, chat=self.dcbot.get_chat(chat_id))
-                    replies.send_reply_messages()
+                    dcmsg = replies.send_reply_messages()[0]
+                    self.cache.set(f"d{event.chat_id}/{dcmsg.id}", tgmsg.id)
+                    self.cache.set(f"t{event.chat_id}/{tgmsg.id}", dcmsg.id)
                 except Exception as ex:
                     self.dcbot.logger.exception(ex)
 

@@ -1,5 +1,6 @@
 simplebot>=4.0.0
 SQLAlchemy>=1.4.39
+cachelib>=0.7.0
 Telethon>=1.25.4
 # to speed up encryption
 cryptg>=0.3.1

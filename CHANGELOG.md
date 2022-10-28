@@ -5,6 +5,7 @@
 ### Added
 
 - support sending attachments + HTML message from Delta Chat to Telegram
+- added support for message replies/quotes
 
 ### Changed
 
