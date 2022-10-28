@@ -123,7 +123,9 @@ class TelegramBot(TelegramClient):  # noqa
                             self.dcbot.logger.exception(ex)
 
     async def tg2dc(self, event: events.NewMessage) -> None:
-        self.dcbot.logger.debug(f"Got message (id={event.message.id}) from Telegram")
+        self.dcbot.logger.debug(
+            f"Got message (id={event.message.id}) from Telegram chat (id=event.chat_id)"
+        )
         tgmsg = event.message
         if tgmsg.text is None:
             return
@@ -133,6 +135,9 @@ class TelegramBot(TelegramClient):  # noqa
                 for link in session.query(Link).filter_by(tgchat=event.chat_id)
             ]
         if not dcchats:
+            self.dcbot.logger.debug(
+                f"Ignoring message from Telegram chat (id=event.chat_id)"
+            )
             return
 
         replies = Replies(self.dcbot, self.dcbot.logger)
