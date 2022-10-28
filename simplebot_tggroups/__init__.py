@@ -85,7 +85,7 @@ class TelegramBot(TelegramClient):  # noqa
                 )
                 text = f"**{name}:** {dcmsg.text}"
                 tgmsg = await self.send_message(
-                    tgchat, text, file=files, reply_to=reply_to
+                    tgchat, text, file=files or None, reply_to=reply_to
                 )
                 self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
                 self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
