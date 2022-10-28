@@ -59,11 +59,12 @@ class TelegramBot(TelegramClient):  # noqa
                 lang_code="en",
                 commands=[
                     types.BotCommand(
-                        command="/id", description="gets the ID of the current chat"
+                        command="id", description="gets the ID of the current chat"
                     )
                 ],
             )
         )
+        self.dcbot.logger.debug("Registered commands on Telegram")
 
     def _acc2mp3(self, filename: str) -> Any:
         try:
@@ -306,7 +307,6 @@ async def listen_to_telegram(dcbot: DeltaBot) -> None:
 
     tgbot = await TelegramBot(dcbot).start(bot_token=getdefault(dcbot, "token"))
     dcbot.logger.debug("Connected to Telegram")
-    await tgbot.set_commands()
-    dcbot.logger.debug("Registered commands on Telegram")
+    asyncio.create_task(tgbot.set_commands())
     asyncio.create_task(tgbot.dc2tg())
     await tgbot.run_until_disconnected()
