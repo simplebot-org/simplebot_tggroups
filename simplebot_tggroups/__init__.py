@@ -10,6 +10,7 @@ from typing import Any
 import simplebot
 from cachelib import FileSystemCache
 from deltachat import Chat, Contact, Message
+from pydub import AudioSegment
 from simplebot import DeltaBot
 from simplebot.bot import Replies
 from telethon import TelegramClient, events
@@ -49,6 +50,16 @@ class TelegramBot(TelegramClient):  # noqa
         )
         self.add_event_handler(self.tg2dc, events.NewMessage(incoming=True))
 
+    def _acc2mp3(self, filename: str) -> Any:
+        try:
+            file_ = NamedTemporaryFile(suffix=".mp3")  # noqa
+            audio = AudioSegment.from_file(filename, "aac")
+            audio.export(file_.name, format="mp3")
+            return file_
+        except Exception as err:
+            self.dcbot.logger.exception(err)
+            return filename
+
     async def start_cmd(self, event: events.NewMessage) -> None:
         await event.reply(
             "This is a Delta Chat bridge relaybot and does not support direct chats"
@@ -66,7 +77,10 @@ class TelegramBot(TelegramClient):  # noqa
                 tgchat, dcmsg = await msgs_queue.aget()
                 self.dcbot.logger.debug(f"Sending message (id={dcmsg.id}) to Telegram")
                 if dcmsg.filename:
-                    file_ = dcmsg.filename
+                    if dcmsg.filename.endswith(".aac"):
+                        file_ = self._acc2mp3(dcmsg.filename)
+                    else:
+                        file_ = dcmsg.filename
                 elif dcmsg.html:
                     tmpfile = NamedTemporaryFile(suffix=".html")  # noqa
                     tmpfile.write(dcmsg.html.encode(errors="replace"))

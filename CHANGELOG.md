@@ -10,6 +10,7 @@
 
 - improve debugging
 - truncate too long nicknames when relaying messages to telegram
+- convert `.acc` voice messages to mp3
 
 ### Fixed
 
