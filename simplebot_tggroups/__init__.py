@@ -12,6 +12,7 @@ from deltachat import Chat, Contact, Message
 from simplebot import DeltaBot
 from simplebot.bot import Replies
 from telethon import TelegramClient, events
+from telethon.errors.rpcerrorlist import ChannelPrivateError
 
 from .orm import Link, init, session_scope
 from .subcommands import telegram
@@ -88,6 +89,29 @@ class TelegramBot(TelegramClient):  # noqa
                 )
                 self.cache.set(f"d{tgchat}/{dcmsg.id}", tgmsg.id)
                 self.cache.set(f"t{tgchat}/{tgmsg.id}", dcmsg.id)
+            except ChannelPrivateError as ex:
+                self.dcbot.logger.exception(ex)
+                try:
+                    unbridged_chats = []
+                    with session_scope() as session:
+                        for link in session.query(Link).filter_by(tgchat=tgchat):
+                            self.dcbot.logger.debug(
+                                f"Removing bridge between {link.tgchat}) and {link.dcchat}"
+                            )
+                            unbridged_chats.append(link.dcchat)
+                            session.delete(link)
+                    replies = Replies(dcmsg, self.dcbot.logger)
+                    for chat_id in unbridged_chats:
+                        replies.add(
+                            text=(
+                                "❌ Chat unbridged from Telegram chat, make sure the chat ID is correct"
+                                " or that the bot was not removed from the Telegram chat"
+                            ),
+                            chat=self.dcbot.get_chat(chat_id),
+                        )
+                        replies.send_reply_messages()
+                except Exception as err:
+                    self.dcbot.logger.exception(err)
             except Exception as ex:
                 self.dcbot.logger.exception(ex)
             finally:

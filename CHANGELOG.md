@@ -14,6 +14,7 @@
 ### Fixed
 
 - ignore messages from self
+- remove bridge if the Telegram chat ID is invalid or the bot was removed from the Telegram chat
 
 ## v0.1.0
 
