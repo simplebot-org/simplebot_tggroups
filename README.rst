@@ -30,6 +30,13 @@ To install run::
 
   pip install simplebot-tggroups
 
+To convert Delta Chat voice messages to mp3 before sending them to the Telegram side,
+`pydub <https://github.com/jiaaro/pydub>`_ is used, you might need to install ``ffmpeg`` in your
+system, check: https://github.com/jiaaro/pydub#dependencies, for example to install it in an
+apt-based system::
+
+  sudo apt install ffmpeg
+
 Configuration
 -------------
 
