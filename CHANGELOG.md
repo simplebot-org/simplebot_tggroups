@@ -6,6 +6,10 @@
 
 - don't send ID in private chats on Telegram
 
+### Fixed
+
+- check if `event.message.sender` is `None` to avoid `AttributeError`.
+
 ## [v0.2.0]
 
 ### Added
