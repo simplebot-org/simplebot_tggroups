@@ -175,12 +175,14 @@ class TelegramBot(TelegramClient):  # noqa
             return
 
         replies = Replies(self.dcbot, self.dcbot.logger)
+        sender = "[UNKNOWN SENDER]"
         if tgmsg.sender:
-            sender = " ".join(
-                (tgmsg.sender.first_name or "", tgmsg.sender.last_name or "")
-            ).strip()
-        else:
-            sender = "[UNKNOWN SENDER]"
+            if hasattr(tgmsg.sender, "first_name"):
+                sender = " ".join(
+                    (tgmsg.sender.first_name or "", tgmsg.sender.last_name or "")
+                ).strip()
+            elif hasattr(tgmsg.sender, "title"):
+                sender = tgmsg.sender.title
         args = dict(text=tgmsg.text, sender=sender)
         with TemporaryDirectory() as tempdir:
             if tgmsg.file and tgmsg.file.size <= int(
