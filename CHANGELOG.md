@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v0.3.0]
 
 ### Changed
 
@@ -33,5 +33,6 @@
 - initial release
 
 
-[Unreleased]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/simplebot-org/simplebot_tggroups/compare/v0.1.0...v0.2.0
